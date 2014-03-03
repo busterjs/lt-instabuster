@@ -1,3 +1,5 @@
+#LightTable InstaBuster
+
 ##Buster plugin for Light Table
 
 The goal of this plugin is to make it easy and pleasant to test your JavaScript using a killer combo of [Buster.JS](http://www.busterjs.org)  and [Light Table](http://www.lighttable.com).
