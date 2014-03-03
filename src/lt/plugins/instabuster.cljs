@@ -1,4 +1,4 @@
-(ns lt.plugins.buster-plugin
+(ns lt.plugins.instabuster
   (:require [lt.object :as object]
             [lt.objs.tabs :as tabs]
             [lt.objs.command :as cmd]
@@ -17,7 +17,7 @@
 
 (object/object* ::buster-plugin
                 :tags [:buster-plugin]
-                :name "buster-plugin"
+                :name "buster-plugin"'
                 :behaviors [::on-buster-test ::on-buster-capture ::buster-connect])
 
 

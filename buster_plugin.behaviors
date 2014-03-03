@@ -1,4 +1,0 @@
-{:+ {:app [(:lt.objs.plugins/load-js "buster_plugin_compiled.js")]
-     :buster-plugin []
-     :editor.javascript [:lt.plugins.buster-plugin/on-buster-test-one :lt.plugins.buster-plugin/buster-live-toggle!]
-     :browser [:lt.plugins.buster-plugin/on-buster-browser-destroyed]}}
