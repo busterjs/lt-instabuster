@@ -1,0 +1,6 @@
+{:name "buster_plugin"
+ :version "0.0.1"
+ :author ""
+ :source ""
+ :desc ""
+ :behaviors "buster_plugin.behaviors"}
