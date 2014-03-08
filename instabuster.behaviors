@@ -1,4 +1,8 @@
 {:+ {:app [(:lt.objs.plugins/load-js "instabuster_compiled.js")]
      :buster-plugin []
-     :editor.javascript [:lt.plugins.instabuster/on-buster-test-one :lt.plugins.instabuster/buster-live-toggle!]
+     :editor.javascript [
+                         :lt.plugins.instabuster/on-buster-test-live
+                         :lt.plugins.instabuster/on-maybe-toggle-buster
+                         :lt.plugins.instabuster/buster-live-toggle!
+                         :lt.plugins.instabuster/buster-test-editor!]
      :browser [:lt.plugins.instabuster/on-buster-browser-destroyed]}}
