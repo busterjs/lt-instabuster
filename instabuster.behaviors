@@ -1,8 +1,17 @@
 {:+ {:app [(:lt.objs.plugins/load-js "instabuster_compiled.js")]
-     :buster-plugin []
-     :editor.javascript [
-                         :lt.plugins.instabuster/on-buster-test-live
+
+     :buster-plugin [:lt.plugins.instabuster/on-test
+                     :lt.plugins.instabuster/on-connect]
+
+     :editor.javascript [:lt.plugins.instabuster/on-test-live
                          :lt.plugins.instabuster/on-maybe-toggle-buster
-                         :lt.plugins.instabuster/buster-live-toggle!
-                         :lt.plugins.instabuster/buster-test-editor!]
-     :browser [:lt.plugins.instabuster/on-buster-browser-destroyed]}}
+                         :lt.plugins.instabuster/on-live-toggle!
+                         :lt.plugins.instabuster/on-test-editor!]
+
+     :browser [:lt.plugins.instabuster/on-browser-destroyed]
+
+     :buster.client [:lt.objs.clients/on-connect-drain
+                     :lt.plugins.instabuster/on-start-server
+                     :lt.plugins.instabuster/on-server-kill
+                     :lt.plugins.instabuster/on-server-disconnect
+                     :lt.plugins.instabuster/send]}}
