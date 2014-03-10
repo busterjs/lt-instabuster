@@ -280,12 +280,13 @@
           :reaction (fn [this msg]
                       (.error js/console (stack msg))))
 
-;; TODO: Need to kill browser as well
 (behavior ::on-server-kill
           :triggers #{:kill}
           :reaction (fn [this]
                       (object/merge! this {:connecting false})
                       (object/raise this :disconnect)
+                      (when-let [b (:browser @buster)]
+                        (object/raise b :close))
                       (when-let [worker (::worker @this)]
                         (.kill worker)
                         (object/merge! this {::worker nil}))))
@@ -301,8 +302,12 @@
                       (notifos/set-msg! (str "Disconnected from: " (:name @this)))))
 
 
-;; TODO: Add behavior for refresh !
-
+;; Until a more graceful solution reveals itself !
+(behavior ::on-refresh
+          :triggers #{:object.refresh}
+          :reaction (fn [this]
+                      (when (:connected @this)
+                        (object/raise this :kill))))
 
 
 (cmd/command {:command :start-server
@@ -327,4 +332,12 @@
               :desc "Buster: Ping the server"
               :exec (fn []
                       (object/raise buster-client :send! {:type "ping"}))})
+
+(cmd/command {:command :debug
+              :desc "Buster: Debug command"
+              :exec (fn []
+                          (println "Hello there")
+                          (when-let [b (:browser @buster)]
+                            (println "time to do some killing")
+                            (object/raise b :close)))})
 

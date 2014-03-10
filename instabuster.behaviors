@@ -14,4 +14,5 @@
                      :lt.plugins.instabuster/on-start-server
                      :lt.plugins.instabuster/on-server-kill
                      :lt.plugins.instabuster/on-server-disconnect
-                     :lt.plugins.instabuster/send]}}
+                     :lt.plugins.instabuster/send
+                     :lt.plugins.instabuster/on-refresh]}}
