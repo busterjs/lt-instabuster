@@ -32,16 +32,16 @@ process.on('message', function(msg) {
       process.send("exit");
       break;
     case 'test':
-      var args = ["-c", "" + msg.config, "-r", "xml", "-e", "browser"];
+      var args = ["-c", "" + msg.config, "-r", "instareporter", "-e", "browser"];
       if(msg.path) {
-        args.push["-t", "" + msg.path];
+        args.push("-t", msg.path);
       }
 
       testCli.run(args, function(err) {
-        if(err) {
+        /*if(err) {
           process.send("That testrun didn't end well: " + err);
           process.send("exit");
-        }
+        }*/
       });
 
       break;

@@ -58,10 +58,8 @@
         worker (.fork cp buster-test-path #js ["-p" "1111"] #js {:execPath (files/lt-home (thread/node-exe)) :silent true})
         dis (fn [code signal]
               (notifos/done-working)
-              (.kill worker))
-        msg (fn [m]
-              (.log js/console (str "Message received: " m)))]
-    (.on worker "message" msg)
+              (.kill worker))]
+    (.on worker "message" #(object/raise buster :test.result args %))
     (.on worker "disconnect" dis)
     (.on worker "exit" dis)
     (.on (.-stdout worker) "data" (fn [msg]
@@ -82,12 +80,33 @@
                           (when-not (:connected @buster-client)
                             (object/raise buster-client :start.server)
                             ;; temp hack
-                            (doall (range 100000)))
+                            (doall (range 1000000)))
                           (capture-browser! this)
                           (run-test {:type "test" :config conf :path (:path args)}))
                         (console/error (str
                                         "No suitable buster config found."
                                         "None found for project (Connect: Buster) or based on path: " (:path args))))))
+
+
+(defn find-line-containing [editor txt callback]
+  (.eachLine (.getDoc (ed/->cm-ed editor)) (fn [line-handle]
+                                (when (.contains (.-text line-handle) txt)
+                                  (callback (.-line(.lineInfo (ed/->cm-ed editor) line-handle)))))))
+
+(behavior ::on-test-result
+          :triggers #{:test.result}
+          :reaction (fn [this args res]
+                      (let [editor (pool/last-active)
+                            testName (.-name (.-details res))
+                            status (.-status res)]
+                        (find-line-containing editor testName (fn [lineNo]
+                                                                (println "We found it")
+                                                                (.log js/console res)
+                                                                (cond
+                                                                 (= status "success") (object/raise editor :editor.result "✓" {:line lineNo :start-line lineNo})
+                                                                 (= status "failure") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo :start-line lineNo})
+                                                                 (= status "error") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo :start-line lineNo})
+                                                                 ))))))
 
 
 
@@ -104,7 +123,7 @@
                           (object/raise buster :test (find-buster-js (:info @editor))))))})
 
 (behavior ::on-test-live
-          :triggers #{:change}
+          :triggers #{:save}
           :debounce 500
           :reaction (fn [editor]
                       (when (object/has-tag? editor :editor.buster.live)
@@ -336,8 +355,15 @@
 (cmd/command {:command :debug
               :desc "Buster: Debug command"
               :exec (fn []
-                          (println "Hello there")
-                          (when-let [b (:browser @buster)]
-                            (println "time to do some killing")
-                            (object/raise b :close)))})
+                      (println "Hello there")
+                      (when-let [b (:browser @buster)]
+                        (println "time to do some killing")
+                        (object/raise b :close)))})
+
+
+(cmd/command {:command :dummysearch
+              :desc "Buster: Search withing editor (dummy)"
+              :exec (fn []
+                      (let [editor (ed/->cm-ed (pool/last-active))]
+                        (find-line-containing editor "dummy" #(println (str "Dufus" %)))))})
 
