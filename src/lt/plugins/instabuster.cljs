@@ -90,24 +90,35 @@
 
 (defn find-line-containing [editor txt callback]
   (.eachLine (.getDoc (ed/->cm-ed editor)) (fn [line-handle]
-                                (when (.contains (.-text line-handle) txt)
-                                  (callback (.-line(.lineInfo (ed/->cm-ed editor) line-handle)))))))
+                                             (when (.contains (.-text line-handle) txt)
+                                               (callback (.-line(.lineInfo (ed/->cm-ed editor) line-handle)))))))
+
+(defn show-test-results-inline [args res]
+  (let [editor (pool/last-active)
+        testName (.-name (.-details res))
+        status (.-status res)]
+    (find-line-containing editor testName (fn [lineNo]
+                                            (cond
+                                             (= status "success") (object/raise editor :editor.result "✓" {:line lineNo})
+                                             (= status "failure") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo})
+                                             (= status "error") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo})
+                                             )))))
+
+(defn show-test-results-console [res]
+  (let [test (.-name (.-details res))
+        status (.-status res)
+        testCase (->(.-context res) last .-name)]
+    (cond
+     (= status "success") (console/log (str "✓ " test " (" testCase ")"))
+     :else (console/error  (str status ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
+
 
 (behavior ::on-test-result
           :triggers #{:test.result}
           :reaction (fn [this args res]
-                      (let [editor (pool/last-active)
-                            testName (.-name (.-details res))
-                            status (.-status res)]
-                        (find-line-containing editor testName (fn [lineNo]
-                                                                (println "We found it")
-                                                                (.log js/console res)
-                                                                (cond
-                                                                 (= status "success") (object/raise editor :editor.result "✓" {:line lineNo :start-line lineNo})
-                                                                 (= status "failure") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo :start-line lineNo})
-                                                                 (= status "error") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo :start-line lineNo})
-                                                                 ))))))
-
+                      (if (:path args)
+                        (show-test-results-inline args res)
+                        (show-test-results-console res))))
 
 
 (cmd/command {:command ::test-all
@@ -136,7 +147,6 @@
           :reaction (fn [browser]
                       (when (= (object/->id browser) (object/->id (:browser @buster)))
                         (object/merge! buster {:browser nil}))))
-
 
 
 (defui live-toggler [this]
@@ -257,10 +267,11 @@
 
 
 ;; BUSTER SERVER
-
 (object/object* ::buster.client
                 :tags #{:client :buster.client}
                 :name "Buster Server")
+
+
 
 
 (def buster-client (object/create ::buster.client))
@@ -270,7 +281,7 @@
 (behavior ::on-start-server
           :triggers #{:start.server}
           :reaction (fn [this]
-                      (when-not (:connecting @this)
+                      (when-not (or (:connecting @this) (:connected @this))
                         (notifos/working (str "Connecting to: " (:name @this)))
                         (let [cp (js/require "child_process")
                               worker (.fork cp buster-server-path #js ["-p" "1111"] #js {:execPath (files/lt-home (thread/node-exe)) :silent true})
@@ -283,14 +294,20 @@
                           (.on worker "disconnect" dis)
                           (.on worker "exit" dis)
                           (.on (.-stdout worker) "data" (fn [msg]
-                                                          (println (str "Std out:" msg))
+                                                          (println (str "Buster server out: " msg))
                                                           (when (.contains (str msg) "buster-server running")
                                                             (do
                                                               (object/merge! this {:connecting false})
                                                               (notifos/done-working (str "Connected to: " (:name @this)))
-                                                              (object/raise this :connect this)))))
+                                                              (object/merge! this {:connected true})
+                                                              ;;(object/raise this :connect this)
+                                                              (let [sidebar-client (clients/handle-connection! {:client-id (object/->id this) ; creates a new object...
+                                                                                                                         :name "Buster"
+                                                                                                                         :tags [:buster.client]
+                                                                                                                         :type "Buster Server"})]
+                                                                (object/merge! this {:sidebar-client sidebar-client}))))))
                           (.on (.-stderr worker) "data" (fn [err]
-                                                          (println (str "Feil: " err))
+                                                          (println (str "Buster server error: " err))
                                                           (object/raise this :kill)))
                           (object/merge! this {::worker worker})))))
 
@@ -300,25 +317,30 @@
                       (.error js/console (stack msg))))
 
 (behavior ::on-server-kill
-          :triggers #{:kill}
+          :triggers #{:kill :close!}
           :reaction (fn [this]
-                      (object/merge! this {:connecting false})
-                      (object/raise this :disconnect)
+                      (object/merge! buster-client {:connecting false})
+                      (object/raise buster-client :disconnect)
                       (when-let [b (:browser @buster)]
                         (object/raise b :close))
-                      (when-let [worker (::worker @this)]
+                      (when-let [worker (::worker @buster-client)]
                         (.kill worker)
-                        (object/merge! this {::worker nil}))))
+                        (object/merge! this {::worker nil}))
+                      (when-not (= (object/->id this) (object/->id buster-client))
+                                   (clients/rem! this))
+                      (when-let [sb (:sidebar-client @buster-client)]
+                        (clients/rem! sb)
+                        (object/merge! buster-client  {:sidebar-client nil}))))
 
 
 (behavior ::on-server-disconnect
           :triggers #{:disconnect}
           :reaction (fn [this]
-                      (when-let [worker (::worker @this)]
+                      (when-let [worker (::worker @buster-client)]
                         (when (.-connected worker)
                           (.disconnect worker)))
-                      (object/merge! this {:connected false})
-                      (notifos/set-msg! (str "Disconnected from: " (:name @this)))))
+                      (object/merge! buster-client {:connected false})
+                      (notifos/set-msg! (str "Disconnected from: " (:name @buster-client)))))
 
 
 ;; Until a more graceful solution reveals itself !
@@ -339,8 +361,6 @@
               :exec (fn []
                       (object/raise buster-client :kill))})
 
-
-;;NOT Needed yet.
 (behavior ::on-send
           :triggers #{:send!}
           :reaction (fn [this msg]
@@ -351,19 +371,4 @@
               :desc "Buster: Ping the server"
               :exec (fn []
                       (object/raise buster-client :send! {:type "ping"}))})
-
-(cmd/command {:command :debug
-              :desc "Buster: Debug command"
-              :exec (fn []
-                      (println "Hello there")
-                      (when-let [b (:browser @buster)]
-                        (println "time to do some killing")
-                        (object/raise b :close)))})
-
-
-(cmd/command {:command :dummysearch
-              :desc "Buster: Search withing editor (dummy)"
-              :exec (fn []
-                      (let [editor (ed/->cm-ed (pool/last-active))]
-                        (find-line-containing editor "dummy" #(println (str "Dufus" %)))))})
 
