@@ -6,15 +6,15 @@
     },
 
     "add two numbers": function() {
-      assert(this.math.add(2,2), 4);
+      assert.equals(this.math.add(2,2), 4);
     },
 
     "subtract two numbers": function() {
-      assert(this.math.subtract(4,2), 2);
+      assert.equals(this.math.subtract(4,2), 2);
     },
 
     "multiply two numbers": function() {
-      assert(this.math.multiply(2,2), 4);
+      assert.equals(this.math.multiply(2,2), 4);
     }
 
 
