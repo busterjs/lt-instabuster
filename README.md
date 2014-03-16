@@ -5,6 +5,14 @@
 The goal of this plugin is to make it easy and pleasant to test your JavaScript using a killer combo of [Buster.JS](http://www.busterjs.org)  and [Light Table](http://www.lighttable.com).
 
 
+##Installing
+The plugin can be installed using the LightTable plugin manager (or clone this repo to your plugins folder, make sure you call the folder instabuster!).
+
+
+##Getting started
+* See [Buster.JS overview](http://docs.busterjs.org/en/latest/overview/). *Note*. No buster install needed when using InstaBuster (but you may want it for other things like CI etc).
+* The plugin ships with a simple [sample project](https://github.com/busterjs/lt-instabuster/tree/master/sample). Open it in your workspace and try running the tests.
+
 
 ##Features
 
@@ -44,7 +52,7 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 
 
 ##Version history
-* 0.0.1 : (NOT THERE YET) A very basic initial release for running a single test or all tests for a given project.
+* 0.0.1 : A very basic initial release for running a single test or all tests for a given project.
 
 ##Roadmap
 * Support multiple projects
@@ -52,3 +60,6 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 * InstaBusta: Continuosly give (non-annoying) feedback for a Buster test as you edit it.
 * Node tests: Allow testing of node enviroment tests.
 * Autotest: Integrate the autotest feature of Buster to give you continious feedback as you change any test or implementation file as defined by your Buster configuration. Alternatively a RYO based on the assumption all changes are made from inside of LightTable
+
+##License
+BSD License

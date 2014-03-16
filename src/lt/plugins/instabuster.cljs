@@ -272,7 +272,6 @@
 
 
 
-
 ;; BUSTER SERVER
 ;; ***************************************************************************
 
@@ -322,6 +321,7 @@
                                                               (let [sidebar-client (clients/handle-connection! {:client-id (object/->id this) ; creates a new object...
                                                                                                                 :name "Buster"
                                                                                                                 :tags [:buster.client]
+                                                                                                                :dill "Dall"
                                                                                                                 :type "Buster Server"})]
                                                                 (object/merge! this {:sidebar-client sidebar-client}))))))
                           (.on (.-stderr worker) "data" (fn [err]
