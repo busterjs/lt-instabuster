@@ -7,6 +7,7 @@ The goal of this plugin is to make it easy and pleasant to test your JavaScript 
 
 ##Installing
 The plugin can be installed using the LightTable plugin manager (or clone this repo to your plugins folder, make sure you call the folder instabuster!).
+You probably will need to reload behaviors for the plugin to work.
 
 
 ##Getting started
