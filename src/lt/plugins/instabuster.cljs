@@ -83,9 +83,11 @@
                             (doall (range 1000000)))
                           (capture-browser! this)
                           (run-test {:type "test" :config conf :path (:path args)}))
-                        (console/error (str
-                                        "No suitable buster config found."
-                                        "None found for project (Connect: Buster) or based on path: " (:path args))))))
+                        (do
+                          (console/error (str
+                                         "No suitable buster config found."
+                                         "None found for project (Connect: Buster) or based on path: " (:path args)))
+                          (object/raise this :provide.config)))))
 
 
 (defn find-line-containing [editor txt callback]
@@ -110,7 +112,7 @@
         testCase (->(.-context res) last .-name)]
     (cond
      (= status "success") (console/log (str "✓ " test " (" testCase ")"))
-     :else (console/error  (str status ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
+     :else (console/error  (str (first status) ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
 
 
 (behavior ::on-test-result
@@ -118,7 +120,9 @@
           :reaction (fn [this args res]
                       (if (:path args)
                         (show-test-results-inline args res)
-                        (show-test-results-console res))))
+                        (show-test-results-console res))
+                      (doseq [out (.-log res)]
+                        (console/log (str "    " out)))))
 
 
 (cmd/command {:command ::test-all
@@ -135,7 +139,7 @@
 
 (behavior ::on-test-live
           :triggers #{:save}
-          :debounce 500
+          :debounce 100
           :reaction (fn [editor]
                       (when (object/has-tag? editor :editor.buster.live)
                         (object/raise buster :test (find-buster-js (:info @editor))))))
@@ -203,18 +207,7 @@
                         (object/raise ed :live.toggle!)))})
 
 
-;; Connect/Server
-(behavior ::on-connect
-          :triggers #{:connect}
-          :reaction (fn [this path]
-                      (object/merge! this {:buster-js path})
-                      (object/raise buster-client :start.server)))
 
-
-(scl/add-connector {:name "Buster"
-                    :desc "Please provide the location of buster.js for your javascript project"
-                    :connect (fn []
-                               (dialogs/file buster :connect))})
 
 
 
@@ -265,17 +258,44 @@
                       (maybe-add-toggler! editor)))
 
 
+(behavior ::on-config-provided
+          :triggers #{:config.provided}
+          :reaction (fn [this path]
+                      (object/merge! this {:buster-js path})))
+
+(behavior ::on-provide-config
+          :triggers #{:provide.config}
+          :reaction (fn [this trigger]
+                      ;; Ehh we need something slightly more informative than just a file chooser
+                      (dialogs/file buster :config.provided)))
+
+
+
+
 
 ;; BUSTER SERVER
+;; ***************************************************************************
+
+(behavior ::on-connect
+          :triggers #{:connect}
+          :reaction (fn [this path]
+                      (object/merge! this {:buster-js path})
+                      (object/raise buster-client :start.server)))
+
+
+(scl/add-connector {:name "Buster"
+                    :desc "Please provide the location of buster.js for your javascript project"
+                    :connect (fn []
+                               (dialogs/file buster :connect))})
+
+
 (object/object* ::buster.client
                 :tags #{:client :buster.client}
                 :name "Buster Server")
 
 
 
-
 (def buster-client (object/create ::buster.client))
-
 (def buster-server-path (files/join plugin-dir "node" "buster-server.js"))
 
 (behavior ::on-start-server
@@ -297,14 +317,12 @@
                                                           (println (str "Buster server out: " msg))
                                                           (when (.contains (str msg) "buster-server running")
                                                             (do
-                                                              (object/merge! this {:connecting false})
+                                                              (object/merge! this {:connecting false :connected true})
                                                               (notifos/done-working (str "Connected to: " (:name @this)))
-                                                              (object/merge! this {:connected true})
-                                                              ;;(object/raise this :connect this)
                                                               (let [sidebar-client (clients/handle-connection! {:client-id (object/->id this) ; creates a new object...
-                                                                                                                         :name "Buster"
-                                                                                                                         :tags [:buster.client]
-                                                                                                                         :type "Buster Server"})]
+                                                                                                                :name "Buster"
+                                                                                                                :tags [:buster.client]
+                                                                                                                :type "Buster Server"})]
                                                                 (object/merge! this {:sidebar-client sidebar-client}))))))
                           (.on (.-stderr worker) "data" (fn [err]
                                                           (println (str "Buster server error: " err))
@@ -327,7 +345,7 @@
                         (.kill worker)
                         (object/merge! this {::worker nil}))
                       (when-not (= (object/->id this) (object/->id buster-client))
-                                   (clients/rem! this))
+                        (clients/rem! this))
                       (when-let [sb (:sidebar-client @buster-client)]
                         (clients/rem! sb)
                         (object/merge! buster-client  {:sidebar-client nil}))))
@@ -366,9 +384,3 @@
           :reaction (fn [this msg]
                       (.send (::worker @this)
                              (clj->js msg))))
-
-(cmd/command {:command :send-ping
-              :desc "Buster: Ping the server"
-              :exec (fn []
-                      (object/raise buster-client :send! {:type "ping"}))})
-

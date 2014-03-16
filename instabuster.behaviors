@@ -2,7 +2,9 @@
 
      :buster-plugin [:lt.plugins.instabuster/on-test
                      :lt.plugins.instabuster/on-test-result
-                     :lt.plugins.instabuster/on-connect]
+                     :lt.plugins.instabuster/on-connect
+                     :lt.plugins.instabuster/on-provide-config
+                     :lt.plugins.instabuster/on-config-provided]
 
      :editor.javascript [:lt.plugins.instabuster/on-test-live
                          :lt.plugins.instabuster/on-maybe-toggle-buster
