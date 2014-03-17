@@ -384,3 +384,9 @@
           :reaction (fn [this msg]
                       (.send (::worker @this)
                              (clj->js msg))))
+
+
+
+
+
+
