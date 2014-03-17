@@ -51,8 +51,8 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 * Unless you select a buster config file for your project, the autosearch only searches for "buster.js"
 
 
-
 ##Version history
+* 0.0.2 : Changed license to same as LightTable (GPL). Some minor fixes.
 * 0.0.1 : A very basic initial release for running a single test or all tests for a given project.
 
 ##Roadmap
@@ -63,4 +63,6 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 * Autotest: Integrate the autotest feature of Buster to give you continious feedback as you change any test or implementation file as defined by your Buster configuration. Alternatively a RYO based on the assumption all changes are made from inside of LightTable
 
 ##License
-BSD License
+
+GPLv3 license, same as [Light Table](https://github.com/LightTable/LightTable). See LICENSE.md for the full text.
+
