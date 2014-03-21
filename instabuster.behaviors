@@ -4,12 +4,14 @@
                      :lt.plugins.instabuster/on-test-result
                      :lt.plugins.instabuster/on-connect
                      :lt.plugins.instabuster/on-provide-config
-                     :lt.plugins.instabuster/on-config-provided]
+                     :lt.plugins.instabuster/on-config-provided
+                     :lt.plugins.instabuster/on-toggle-autotest]
 
      :editor.javascript [:lt.plugins.instabuster/on-test-live
                          :lt.plugins.instabuster/on-maybe-toggle-buster
                          :lt.plugins.instabuster/on-live-toggle!
-                         :lt.plugins.instabuster/on-test-editor!]
+                         :lt.plugins.instabuster/on-test-editor!
+                         :lt.plugins.instabuster/on-maybe-autotest]
 
      :browser [:lt.plugins.instabuster/on-browser-destroyed]
 

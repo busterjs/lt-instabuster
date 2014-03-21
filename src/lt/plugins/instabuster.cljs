@@ -74,9 +74,9 @@
 (behavior ::on-test
           :triggers #{:test}
           :reaction (fn[this args]
-                      (if-let [conf (or (:buster-js @this) (:buster-js args))]
+                      (if-let [conf (or (:buster-js args) (:buster-js @this))]
                         (do
-                          (notifos/working "Running Buster tests")
+                          (notifos/working (str "Running Buster tests for " (files/parent conf)))
                           (when-not (:connected @buster-client)
                             (object/raise buster-client :start.server)
                             ;; temp hack
@@ -85,8 +85,8 @@
                           (run-test {:type "test" :config conf :path (:path args)}))
                         (do
                           (console/error (str
-                                         "No suitable buster config found."
-                                         "None found for project (Connect: Buster) or based on path: " (:path args)))
+                                          "No suitable buster config found."
+                                          "None found for project (Connect: Buster) or based on path: " (:path args)))
                           (object/raise this :provide.config)))))
 
 
@@ -115,14 +115,22 @@
      :else (console/error  (str (first status) ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
 
 
+
+(defn show-test-results [args res]
+  (if (:path args)
+    (show-test-results-inline args res)
+    (show-test-results-console res))
+  (doseq [out (.-log res)]
+    (console/log (str "    " out))))
+
+
 (behavior ::on-test-result
           :triggers #{:test.result}
           :reaction (fn [this args res]
-                      (if (:path args)
-                        (show-test-results-inline args res)
-                        (show-test-results-console res))
-                      (doseq [out (.-log res)]
-                        (console/log (str "    " out)))))
+                      (if (= "suite-complete" (.-status res))
+                        (console/log (str "Buster suite complete. #ok: " (.-successes res) ", #failed: " (.-failures res) ", #errors: " (.-errors res)))
+                        (show-test-results args res))))
+
 
 
 (cmd/command {:command ::test-all
@@ -207,49 +215,63 @@
                         (object/raise ed :live.toggle!)))})
 
 
-
-
-
-
 (def buster-cfg-path (files/join buster-module-dir "buster-configuration"))
 (def whenjs (js/require (files/join buster-module-dir "/when")))
 
+(defn resolve-buster-js [editor]
+  (or (:buster-js (find-buster-js (:info @editor))) (:buster-js @buster)))
 
-(defn wrap-group [path group]
-  (let [d (.defer whenjs)]
-    (.on group "load:tests" (fn [tests]
-                              (.resolve d (.map tests (fn [test] (.-path test))))))
-    (.then (.resolve group) #())
-    d))
+(defn load-buster-cfg [busterjs]
+  (.loadConfigurationFile (js/require buster-cfg-path) busterjs))
 
-(defn wrap-groups [path groups]
-  (clj->js (map (partial wrap-group path) groups)))
+(defn relative-to [file path]
+  (files/relative (files/parent file) path))
 
 (defn rem-pre-sep[p]
   (clojure.string/replace-first p  #"^/" ""))
 
-(defn is-buster-test [editor args]
-  (let [path (files/relative (files/parent (:busterjs args)) (:path args))]
-    (->
-     (.all whenjs (->> (.loadConfigurationFile (js/require buster-cfg-path) (:busterjs args))
-                       (.-groups)
-                       (filter #(= "browser" (.-environment %)))
-                       (wrap-groups path)))
-     (.then
-      (fn [results]
-        (when (some #(= path (rem-pre-sep %)) (flatten (cljs/js->clj results)))
-          (object/raise editor :test.editor)))))))
+(defn resolve-browser-groups [busterjs]
+  (.-groups (.filterEnv (load-buster-cfg busterjs) "browser")))
 
+(defn resolve-tests [groups]
+  (cljs/clj->js
+   (map
+    (fn [group]
+      (let [d (.defer whenjs)]
+        (.on group "load:tests" (fn [tests] (.resolve d (.map tests #(.-path %)))))
+        (.then (.resolve group) #())
+        d))
+    groups)))
 
-(defn maybe-buster-test [editor]
-  (when-let [busterjs (or (:buster-js (find-buster-js (:info @editor))) (:buster-js @buster))]
-    (is-buster-test editor {:busterjs busterjs :path (-> @editor :info :path)})))
+(defn maybe-buster-test [editor callback]
+  (when-let [busterjs (resolve-buster-js editor)]
+    (let [path (relative-to busterjs (-> @editor :info :path))]
+      (->
+       (.all whenjs (->> (resolve-browser-groups busterjs)
+                         (resolve-tests)))
+       (.then
+        (fn [results]
+          (when (some #(= path (rem-pre-sep %)) (flatten (cljs/js->clj results)))
+            (callback))))))))
+
+(defn paths-from-resourceSets [resourceSets]
+  (flatten (map #(cljs/js->clj (.map % (fn [res] (.-path res)))) resourceSets)))
+
+(defn maybe-buster-file [editor callback]
+  (when-let [busterjs (resolve-buster-js editor)]
+    (let [path (relative-to busterjs (-> @editor :info :path))]
+      (->
+       (.all whenjs (clj->js (map #(.resolve %) (resolve-browser-groups busterjs))))
+       (.then
+        (fn [rs]
+          (when (some #(= path (rem-pre-sep %)) (paths-from-resourceSets rs))
+            (callback))))))))
 
 
 (behavior ::on-maybe-toggle-buster
           :triggers #{:active}
           :reaction (fn [editor]
-                      (maybe-buster-test editor)))
+                      (maybe-buster-test editor #(object/raise editor :test.editor))))
 
 (behavior ::on-test-editor!
           :triggers #{:test.editor}
@@ -269,7 +291,24 @@
                       ;; Ehh we need something slightly more informative than just a file chooser
                       (dialogs/file buster :config.provided)))
 
+(behavior ::on-maybe-autotest
+          :triggers #{:save}
+          :reaction (fn [editor]
+                      (when (and (= (:buster-js (find-buster-js (:info @editor))) (:buster-js @buster))
+                                 (:autotest @buster )
+                                 (not (object/has-tag? editor :editor.buster.live)))
+                        (maybe-buster-file editor #((object/raise buster :test {}))))))
 
+(behavior ::on-toggle-autotest
+          :triggers #{:autotest}
+          :reaction (fn [this]
+                      (object/merge! this {:autotest (not (:autotest @this))})
+                      (notifos/done-working (if (:autotest @this) "Autotest on" "Autotest off"))))
+
+(cmd/command {:command :toggle-autotest
+              :desc "Buster: Toggle autotest"
+              :exec (fn []
+                      (object/raise buster :autotest))})
 
 
 ;; BUSTER SERVER
