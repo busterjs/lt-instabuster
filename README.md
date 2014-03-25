@@ -32,6 +32,11 @@ The _Buster: Run all tests_ command runs all tests for your selected project. Yo
 When running tests in this mode, the test results are currently written to the console.
 
 
+###Autotest
+The _Buster: Toggle autotest_ command will turn the autotest feature on/off. When in autotest mode, a test all run is triggered when you save any file that is considered relevant for Buster based on the buster.js configuration you have provided. A test all run will not be triggered when you save an editor that is in buster live mode.
+
+
+
 ### Buster config
 To run buster tests you need to provide the path to the relevant buster.js file. You can do this through the "Add connection..." command and select Buster. You will be prompted for a file, select the buster.js file for your project. (Limited to one project at the moment).
 
@@ -52,6 +57,9 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 
 
 ##Version history
+Details of changes for each version is provided in the release notes.
+
+* 0.0.3 : Reduced footprint and simple autotest feature.
 * 0.0.2 : Changed license to same as LightTable (GPL). Some minor fixes.
 * 0.0.1 : A very basic initial release for running a single test or all tests for a given project.
 
@@ -60,7 +68,6 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 * Call buster test in process, rather than shelling out. This enables a lot of interesting options in the future.
 * InstaBusta: Continuosly give (non-annoying) feedback for a Buster test as you edit it.
 * Node tests: Allow testing of node enviroment tests.
-* Autotest: Integrate the autotest feature of Buster to give you continious feedback as you change any test or implementation file as defined by your Buster configuration. Alternatively a RYO based on the assumption all changes are made from inside of LightTable
 
 ##License
 
