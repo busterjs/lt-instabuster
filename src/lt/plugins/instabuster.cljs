@@ -124,11 +124,17 @@
     (console/log (str "    " out))))
 
 
+(defn show-suite-results [res]
+  (let [r (.-results res)]
+    (console/log (str "Buster suite complete. #tests: " (.-tests r)
+                      ", #failed: " (.-failures r)
+                      ", #errors: " (.-errors r)))))
+
 (behavior ::on-test-result
           :triggers #{:test.result}
           :reaction (fn [this args res]
                       (if (= "suite-complete" (.-status res))
-                        (console/log (str "Buster suite complete. #ok: " (.-successes res) ", #failed: " (.-failures res) ", #errors: " (.-errors res)))
+                        (when-not (:path args)(show-suite-results res))
                         (show-test-results args res))))
 
 
