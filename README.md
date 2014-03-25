@@ -13,6 +13,7 @@ You probably will need to reload behaviors for the plugin to work.
 ##Getting started
 * See [Buster.JS overview](http://docs.busterjs.org/en/latest/overview/). *Note*. No buster install needed when using InstaBuster (but you may want it for other things like CI etc).
 * The plugin ships with a simple [sample project](https://github.com/busterjs/lt-instabuster/tree/master/sample). Open it in your workspace and try running the tests.
+* Check out this [introductory screencast](https://www.youtube.com/watch?v=WKHWazblpbc)
 
 
 ##Features
