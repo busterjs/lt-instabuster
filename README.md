@@ -42,6 +42,12 @@ To run buster tests you need to provide the path to the relevant buster.js file.
 
 _If you don't provide a buster.js file, but you are triggering a behavior for running a particular file, the plugin will try to recursivly find one searching the given file's current dir or ancestor dirs._
 
+### Code templates
+* _Buster: New TestCase_ - Inserts a template for a new test case at current cursor position
+* _Buster: New Test_ - Inserts a template for a new test at current cursor position
+
+
+
 
 ###Keybindings
 None of the commands in the plugin comes with pre-assigned keyboard shortcuts. We don't want to presume anything so we'll leave assigning meaningful shortcuts up to you !
