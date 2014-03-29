@@ -53,23 +53,61 @@
   (assoc editor-info :buster-js (files/walk-up-find (:path editor-info) "buster.js")))
 
 
-(defn run-test [args]
-  (let [cp (js/require "child_process")
-        worker (.fork cp buster-test-path #js ["-p" "1111"] #js {:execPath (files/lt-home (thread/node-exe)) :silent true})
-        dis (fn [code signal]
-              (notifos/done-working)
-              (.kill worker))]
-    (.on worker "message" #(object/raise buster :test.result args %))
-    (.on worker "disconnect" dis)
-    (.on worker "exit" dis)
-    (.on (.-stdout worker) "data" (fn [msg]
-                                    (println (str msg))
-                                    (when (.contains (str msg) "exit")
-                                      (.kill worker))))
-    (.on (.-stderr worker) "data" (fn [err]
-                                    (println (str "Error running tests: " err))))
-    (.send worker (clj->js args))))
 
+;; ******** Cached test runner **************
+;; NOTE: Requires test-cli NOT to exit process ! (mod test-cli code necessary)
+
+(object/object* ::buster.runner
+                :tags #{:buster.runner}
+                :name "Buster Runner")
+
+(def buster-runner (object/create ::buster.runner))
+
+
+(behavior ::on-connect-runner
+          :triggers #{:connect.runner}
+          :reaction (fn [this]
+                      (when-not (or (:connected @this) (:connecting @this))
+                        (let [cp (js/require "child_process")
+                              worker (.fork cp buster-test-path #js [] #js {:execPath (files/lt-home (thread/node-exe)) :silent true})
+                              dis (fn [code signal]
+                                    (object/raise this :kill))]
+                          (object/merge! this {:connecting true})
+                          (.on (.-stdout worker) "data" (fn [msg]
+                                                          (when (.contains (str msg) "connected!")
+                                                            (object/merge! this {:connecting false :connected true}))))
+                          (.on (.-stderr worker) "data" (fn [err]
+                                                          (println (str "Error from runner: " err))))
+                          (.on worker "disconnect" dis)
+                          (.on worker "exit" dis)
+                          (object/merge! this {::worker worker})))))
+
+(behavior ::on-runner-kill
+          :triggers #{:kill :close!}
+          :reaction (fn [this]
+                      (object/merge! this {:connected false :connecting false})
+                      (when-let [worker (::worker @this)]
+                        (when (.-connected worker)
+                          (.kill worker))
+                        (object/merge! this {::worker nil}))))
+
+(behavior ::on-runner-refresh
+          :triggers #{:object.refresh}
+          :reaction (fn [this]
+                      (when (:connected @this)
+                        (object/raise this :kill))))
+
+(behavior ::on-run-test
+          :triggers #{:run.test}
+          :reaction (fn [this args]
+                      (when-not (:connected @this)
+                            (object/raise this :connect.runner)
+                            ;; temp hack
+                            (doall (range 1000000)))
+                      (let [worker (::worker @this)]
+                        (.removeAllListeners worker "message")
+                        (.on worker "message" #(object/raise buster :test.result args %))
+                        (.send worker (clj->js args)))))
 
 (behavior ::on-test
           :triggers #{:test}
@@ -82,7 +120,7 @@
                             ;; temp hack
                             (doall (range 1000000)))
                           (capture-browser! this)
-                          (run-test {:type "test" :config conf :path (:path args)}))
+                          (object/raise buster-runner :run.test {:type "test" :config conf :path (:path args)}))
                         (do
                           (console/error (str
                                           "No suitable buster config found."
@@ -111,12 +149,13 @@
         status (.-status res)
         testCase (->(.-context res) last .-name)]
     (cond
-     (= status "success") (console/log (str "✓ " test " (" testCase ")"))
+     (= status "success" ) (when (not-empty (js->clj (.-log res)))(console/log (str "✓ " test " (" testCase ")")))
      :else (console/error  (str (first status) ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
 
 
 
 (defn show-test-results [args res]
+  (notifos/set-msg! (str "Test " (.-executedTests res) "/" (.-expectedTests res)))
   (if (:path args)
     (show-test-results-inline args res)
     (show-test-results-console res))
@@ -124,20 +163,23 @@
     (console/log (str "    " out))))
 
 
-(defn show-suite-results [res]
-  (let [r (.-results res)]
-    (console/log (str "Buster suite complete. #tests: " (.-tests r)
-                      ", #failed: " (.-failures r)
-                      ", #errors: " (.-errors r)))))
+(defn show-suite-results [args res]
+  (let [r (.-results res)
+        msg (str "Buster suite complete. #tests: " (.-tests r)
+             ", #failed: " (.-failures r)
+             ", #errors: " (.-errors r))]
+    (notifos/set-msg! msg)
+    (notifos/done-working msg)
+    (when-not (:path args)
+      (console/log msg))))
 
 (behavior ::on-test-result
           :triggers #{:test.result}
           :reaction (fn [this args res]
-                      (if (= "suite-complete" (.-status res))
-                        (when-not (:path args)(show-suite-results res))
-                        (show-test-results args res))))
-
-
+                      (cond
+                       (= "suite-complete" (.-status res)) (show-suite-results args res)
+                       (= "suite-configuration" (.-status res)) (str "noop") ;; Noop at the moment
+                       :else (show-test-results args res))))
 
 (cmd/command {:command ::test-all
               :desc "Buster: Run all tests"

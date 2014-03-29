@@ -7,6 +7,11 @@
                      :lt.plugins.instabuster/on-config-provided
                      :lt.plugins.instabuster/on-toggle-autotest]
 
+     :buster.runner [:lt.plugins.instabuster/on-connect-runner
+                     :lt.plugins.instabuster/on-runner-kill
+                     :lt.plugins.instabuster/on-run-test
+                     :lt.plugins.instabuster/on-runner-refresh]
+
      :editor.javascript [:lt.plugins.instabuster/on-test-live
                          :lt.plugins.instabuster/on-maybe-toggle-buster
                          :lt.plugins.instabuster/on-live-toggle!

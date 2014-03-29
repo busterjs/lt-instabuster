@@ -3,7 +3,8 @@ var buster_test = require(path.join(__dirname, '../node_modules/buster/node_modu
 var busterPath = path.join(__dirname, "../node_modules", "buster/lib/buster");
 
 
-var testCli = buster_test.create(process.stdout, process.stderr, {
+var getTestCli = function() {
+  return buster_test.create(process.stdout, process.stderr, {
     missionStatement: "Run Buster.JS tests on node, in browsers, or both",
     description: [
         "Usage: buster-test [options] [filters]\n",
@@ -21,8 +22,10 @@ var testCli = buster_test.create(process.stdout, process.stderr, {
             require(path.join(__dirname, '../node_modules/buster/node_modules/buster-syntax')).create({ ignoreReferenceErrors: true })
         ]
     }
-});
+  });
+}
 
+process.stdout.write("connected!");
 
 
 process.on('message', function(msg) {
@@ -37,7 +40,7 @@ process.on('message', function(msg) {
         args.push("-t", msg.path);
       }
 
-      testCli.run(args, function(err) {
+      getTestCli().run(args, function(err) {
         /*if(err) {
           process.send("That testrun didn't end well: " + err);
           process.send("exit");
