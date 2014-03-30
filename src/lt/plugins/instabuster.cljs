@@ -33,6 +33,9 @@
 (def buster (object/create ::buster-plugin))
 
 
+(add-watch buster :object.change (fn [_ _ _ _]
+                                   (object/raise dash/dashboard :project.update {:conf (:buster-js @buster)
+                                                                                  :autotest (:autotest @buster)})))
 
 (defn capture-browser! [this]
   (when-not (:browser @this)

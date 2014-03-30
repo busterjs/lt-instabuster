@@ -32,4 +32,5 @@
      :buster.dashboard [:lt.plugins.instabuster.dashboard/on-suite-start
                         :lt.plugins.instabuster.dashboard/on-test-result
                         :lt.plugins.instabuster.dashboard/on-suite-complete
-                        :lt.plugins.instabuster.dashboard/on-testrun-init]}}
+                        :lt.plugins.instabuster.dashboard/on-testrun-init
+                        :lt.plugins.instabuster.dashboard/on-project-update]}}

@@ -29,7 +29,7 @@
 
 (defui failed-ui []
   [:div.failed-tests
-    [:h2 "Failed tests"]
+    [:h3 "Failed tests"]
     [:ul
      (map #(failed-test-ui %)
           (filter #(contains? #{"error" "failure"} (:status %)) (:test-results @dashboard)))]])
@@ -38,7 +38,7 @@
 (defui testprogress-ui [res]
   (let [status (if (tests-ok? (:test-results @dashboard)) "ok" "error")]
     [:div.buster-results
-     [:h1 (str "Testresults for " (project-name (:config (first (:test-results @dashboard)))))]
+     [:h2 (str "Testresults for " (project-name (:config (first (:test-results @dashboard)))))]
      [:div
        [:progress {:value (:executed-tests res) :max (:expected-tests res) :class status}]]
      [:p.curr-test (str (:executed-tests res) "/" (:expected-tests res) ": " (:test res) " (" (:test-case res) ")")]
@@ -46,16 +46,22 @@
 
 (defui testinit-ui []
   [:div.buster-results
-   [:h1 "Testresults"]
+   [:h2 "Testresults"]
    [:p "Initializing testrun..."]])
 
-(defui dashboard-ui [data]
+(defui project-ui [data]
   [:div
-   [:h1 (str "Project: " (:project data))]])
+   [:h2 "Project settings"]
+   [:ul
+     [:li (when-let [c (:conf data)] (str "Selected project: " (project-name c)))]
+     [:li (str "Autotest on?: " (:autotest data))]]])
+
 
 (defui wrapper [this]
   [:div.buster-dashboard {:style "overflow: scroll;"}
-   [:h1.title "Buster dashboard"]])
+   [:h1.title "Buster dashboard"]
+   [:div.result-container]
+   [:div.project-container]])
 
 (object/object* ::dashboard
                 :tags #{:buster.dashboard}
@@ -89,14 +95,13 @@
   (not (some #(contains? #{"error" "failure"} (:status %)) results)))
 
 
-
 (behavior ::on-testrun-init
           :triggers #{:testrun.init}
           :reaction (fn [this]
-                      (let [stat-dom (:content @this)]
-                        (when-let [d (dom/$ :div.buster-results)] (dom/remove d))
+                      (let [container (dom/$ :div.result-container (:content @dashboard))]
+                        (dom/empty container)
                         (object/merge!  this {:test-results [] :test-init-at (.now js/Date)})
-                        (dom/append stat-dom (testinit-ui)))))
+                        (dom/append container (testinit-ui)))))
 
 (behavior  ::on-suite-start
            :triggers #{:suite.start}
@@ -108,15 +113,22 @@
           :triggers #{:test.result}
           :reaction (fn [this res]
                       (object/update! this [:test-results] conj res)
-                      (let [stat-dom (:content @this)]
-                         (when-let [d (dom/$ :div.buster-results)] (dom/remove d))
-                         (dom/append stat-dom (testprogress-ui res)))))
+                      (let [container (dom/$ :div.result-container (:content @dashboard))]
+                        (dom/empty container)
+                        (dom/append container (testprogress-ui res)))))
 
 (behavior ::on-suite-complete
           :triggers #{:suite.complete}
           :reaction (fn [this res]
                       (object/update! this [:test-results] conj res)
-                      (let [res-dom (dom/$ :div.buster-results)]
-                        (dom/append res-dom (summary-ui res)))))
+                      (let [container (dom/$ :div.result-container (:content @dashboard))]
+                        (dom/append container (summary-ui res)))))
 
-(lt.objs.files/basename (lt.objs.files/parent (:config (first (:test-results @dashboard)))))
+(behavior ::on-project-update
+          :triggers #{:project.update}
+          :reaction (fn [this data]
+                     (println "Project update ?")
+                      (let [container (dom/$ :div.project-container (:content @dashboard))]
+                        (dom/empty container)
+                        (dom/append container (project-ui data)))))
+

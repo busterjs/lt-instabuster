@@ -5,6 +5,11 @@ h1.title {
   text-align: center;
 }
 
+.project-container {
+  margin-top: 20px;
+}
+
+
 .buster-results progress, .buster-results progress[role]
 {
   -webkit-appearance: none;
@@ -58,6 +63,6 @@ h1.title {
 
 
 
-.failed-tests h2 {
-  font-size: 16px;
-}
+.buster-dashboard h2 { font-size: 18px; padding-bottom: 10px; }
+
+.buster-dashboard h3 { font-size: 16px; padding-bottom: 5px; }
