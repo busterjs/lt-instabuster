@@ -1,4 +1,6 @@
-{:+ {:app [(:lt.objs.plugins/load-js "instabuster_compiled.js")]
+{:+ {:app [(:lt.objs.plugins/load-js "instabuster_compiled.js")
+           (:lt.objs.plugins/load-css "instabuster.css")
+           :lt.plugins.instabuster.dashboard/init]
 
      :buster-plugin [:lt.plugins.instabuster/on-test
                      :lt.plugins.instabuster/on-test-result
@@ -25,4 +27,9 @@
                      :lt.plugins.instabuster/on-server-kill
                      :lt.plugins.instabuster/on-server-disconnect
                      :lt.plugins.instabuster/send
-                     :lt.plugins.instabuster/on-refresh]}}
+                     :lt.plugins.instabuster/on-refresh]
+
+     :buster.dashboard [:lt.plugins.instabuster.dashboard/on-suite-start
+                        :lt.plugins.instabuster.dashboard/on-test-result
+                        :lt.plugins.instabuster.dashboard/on-suite-complete
+                        :lt.plugins.instabuster.dashboard/on-testrun-init]}}

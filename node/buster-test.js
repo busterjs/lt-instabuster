@@ -25,6 +25,7 @@ var getTestCli = function() {
   });
 }
 
+process.setMaxListeners(100);
 process.stdout.write("connected!");
 
 

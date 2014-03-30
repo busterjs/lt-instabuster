@@ -15,7 +15,8 @@
             [lt.objs.plugins :as plugins]
             [lt.util.cljs :as cljs]
             [lt.objs.thread :as thread]
-            [lt.objs.clients :as clients])
+            [lt.objs.clients :as clients]
+            [lt.plugins.instabuster.dashboard :as dash])
   (:require-macros [lt.macros :refer [defui behavior]]))
 
 
@@ -107,6 +108,7 @@
                       (let [worker (::worker @this)]
                         (.removeAllListeners worker "message")
                         (.on worker "message" #(object/raise buster :test.result args %))
+                        (object/raise dash/dashboard :testrun.init)
                         (.send worker (clj->js args)))))
 
 (behavior ::on-test
@@ -144,23 +146,21 @@
                                              (= status "error") (object/raise editor :editor.exception (.-message (.-error (.-details res))) {:line lineNo})
                                              )))))
 
-(defn show-test-results-console [res]
-  (let [test (.-name (.-details res))
-        status (.-status res)
-        testCase (->(.-context res) last .-name)]
-    (cond
-     (= status "success" ) (when (not-empty (js->clj (.-log res)))(console/log (str "✓ " test " (" testCase ")")))
-     :else (console/error  (str (first status) ": " test " (" testCase ") message: " (.-message (.-error (.-details res))))))))
-
-
 
 (defn show-test-results [args res]
   (notifos/set-msg! (str "Test " (.-executedTests res) "/" (.-expectedTests res)))
-  (if (:path args)
-    (show-test-results-inline args res)
-    (show-test-results-console res))
-  (doseq [out (.-log res)]
-    (console/log (str "    " out))))
+  (object/raise dash/dashboard :test.result {:status (.-status res)
+                                             :test (.-name (.-details res))
+                                             :test-case (->(.-context res) last .-name)
+                                             :message (when-not (= "success" (.-status res)) (-> (.-details res) .-error .-message))
+                                             :expected-tests (.-expectedTests res)
+                                             :executed-tests (.-executedTests res)})
+  (when (:path args)
+    (show-test-results-inline args res))
+  (when (not-empty (js->clj (.-log res)))
+    (console/log (str (.-name (.-details res)) " (" (->(.-context res) last .-name) ")"))
+    (doseq [out (.-log res)]
+      (console/log (str "    " out)))))
 
 
 (defn show-suite-results [args res]
@@ -170,15 +170,19 @@
              ", #errors: " (.-errors r))]
     (notifos/set-msg! msg)
     (notifos/done-working msg)
-    (when-not (:path args)
-      (console/log msg))))
+    (object/raise dash/dashboard :suite.complete {:status "suite-complete"
+                                                  :tests (.-tests r)
+                                                  :failures (.-failures r)
+                                                  :errors (.-errors r)})))
 
 (behavior ::on-test-result
           :triggers #{:test.result}
           :reaction (fn [this args res]
                       (cond
                        (= "suite-complete" (.-status res)) (show-suite-results args res)
-                       (= "suite-configuration" (.-status res)) (str "noop") ;; Noop at the moment
+                       (= "suite-configuration" (.-status res)) (object/raise dash/dashboard :suite.start {:status "suite-start"
+                                                                                                           :tests (.-tests (.-details res))
+                                                                                                           :config (:config args)})
                        :else (show-test-results args res))))
 
 (cmd/command {:command ::test-all

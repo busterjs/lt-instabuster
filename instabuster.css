@@ -1,0 +1,63 @@
+/* Instabuster Dashboard */
+
+
+h1.title {
+  text-align: center;
+}
+
+.buster-results progress, .buster-results progress[role]
+{
+  -webkit-appearance: none;
+}
+
+/* Polyfill */
+.buster-results progress[role]:after {
+  background-image: none;
+}
+
+.buster-results progress.ok::-webkit-progress-value {
+  background: green;
+}
+
+.buster-results progress.error::-webkit-progress-value {
+  background: red;
+}
+
+
+.buster-results progress::-webkit-progress-bar {
+  background: #ccc;
+}
+
+.buster-results p {
+  margin-top: 10px;
+}
+
+.summary span {
+  margin-right: 10px;
+}
+
+.failed-tests {
+  margin-top: 10px;
+}
+
+.failed-tests > ul {
+  background-color: #000;
+  padding: 5px;
+  overflow: auto;
+  height: 200px;
+}
+
+
+.failed-tests ul > li > ul {
+  margin-left: 5px;
+}
+
+.failed-tests ul > li > ul > li {
+  color: #FFE6E6;
+}
+
+
+
+.failed-tests h2 {
+  font-size: 16px;
+}
