@@ -59,7 +59,7 @@
 ;; NOTE: Requires test-cli NOT to exit process ! (mod test-cli code necessary)
 
 (object/object* ::buster.runner
-                :tags #{:buster.runner}
+                :tags #{:buster.runner :client}
                 :name "Buster Runner")
 
 (def buster-runner (object/create ::buster.runner))
@@ -86,11 +86,12 @@
 (behavior ::on-runner-kill
           :triggers #{:kill :close!}
           :reaction (fn [this]
-                      (object/merge! this {:connected false :connecting false})
-                      (when-let [worker (::worker @this)]
+                      (console/log "Kill triggered !")
+                      (object/merge! buster-runner {:connected false :connecting false})
+                      (when-let [worker (::worker @buster-runner)]
                         (when (.-connected worker)
                           (.kill worker))
-                        (object/merge! this {::worker nil}))))
+                        (object/merge! buster-runner {::worker nil}))))
 
 (behavior ::on-runner-refresh
           :triggers #{:object.refresh}
@@ -439,7 +440,8 @@
                         (clients/rem! this))
                       (when-let [sb (:sidebar-client @buster-client)]
                         (clients/rem! sb)
-                        (object/merge! buster-client  {:sidebar-client nil}))))
+                        (object/merge! buster-client  {:sidebar-client nil}))
+                      (object/raise buster-runner :kill)))
 
 
 (behavior ::on-server-disconnect
