@@ -1,3 +1,3 @@
-(defproject instabuster "0.0.3"
+(defproject instabuster "0.0.4"
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :jvm-opts ["-Xmx768m"])

@@ -89,7 +89,6 @@
 (behavior ::on-runner-kill
           :triggers #{:kill :close!}
           :reaction (fn [this]
-                      (console/log "Kill triggered !")
                       (object/merge! buster-runner {:connected false :connecting false})
                       (when-let [worker (::worker @buster-runner)]
                         (when (.-connected worker)

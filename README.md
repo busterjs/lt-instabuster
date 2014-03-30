@@ -36,12 +36,17 @@ When running tests in this mode, the test results are currently written to the c
 ###Autotest
 The _Buster: Toggle autotest_ command will turn the autotest feature on/off. When in autotest mode, a test all run is triggered when you save any file that is considered relevant for Buster based on the buster.js configuration you have provided. A test all run will not be triggered when you save an editor that is in buster live mode.
 
-
-
 ### Buster config
 To run buster tests you need to provide the path to the relevant buster.js file. You can do this through the "Add connection..." command and select Buster. You will be prompted for a file, select the buster.js file for your project. (Limited to one project at the moment).
 
 _If you don't provide a buster.js file, but you are triggering a behavior for running a particular file, the plugin will try to recursivly find one searching the given file's current dir or ancestor dirs._
+
+### Buster dashboard
+A dashboard view is available throught the command _Buster: Toggle Dashboard_. The dashboard is shown in the right sidebar of Light Table. Currently the dashboard supports:
+* Viewing information about currently selected project (if any)
+* Displaying test results from a test run. (Real time updated if you keep the dashboard open when running tests).
+
+The latter is very handy when running all tests for a project. Obviously less important when showing test results inline for an editor.
 
 ### Code templates
 * _Buster: New TestCase_ - Inserts a template for a new test case at current cursor position
@@ -66,6 +71,7 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 ##Version history
 Details of changes for each version is provided in the release notes.
 
+* 0.0.4 : Buster dashboard and improved performance
 * 0.0.3 : Reduced footprint and simple autotest feature.
 * 0.0.2 : Changed license to same as LightTable (GPL). Some minor fixes.
 * 0.0.1 : A very basic initial release for running a single test or all tests for a given project.

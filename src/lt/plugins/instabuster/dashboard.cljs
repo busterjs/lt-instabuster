@@ -127,7 +127,6 @@
 (behavior ::on-project-update
           :triggers #{:project.update}
           :reaction (fn [this data]
-                     (println "Project update ?")
                       (let [container (dom/$ :div.project-container (:content @dashboard))]
                         (dom/empty container)
                         (dom/append container (project-ui data)))))
