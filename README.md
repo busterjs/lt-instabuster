@@ -48,9 +48,37 @@ A dashboard view is available throught the command _Buster: Toggle Dashboard_. T
 
 The latter is very handy when running all tests for a project. Obviously less important when showing test results inline for an editor.
 
-### Code templates
+
+
+### CoffeeScript
+Testing CoffeScript is a breeze. Thanks to [buster-coffee](https://github.com/busterjs/buster-coffee) you are good to go with a minimum
+of effort.
+
+1. Install the buster-coffee module in your project (`npm install buster-coffee` or `npm link buster-coffee` if you wish to install globally).
+2. require the module in your projects buster.js config. (see sample below)
+3. Write your tests and impl in coffescript or mix and match with javascript...
+
+
+```javascript
+var config = module.exports;
+
+config["Browser tests"] = {
+    environment: "browser",
+    extensions: [require("buster-coffee")],
+    sources: ["src/**/*.coffee"],
+    tests: ["test/**/*-test.coffee"]
+};
+
+
+```
+
+Step 1 of the preconditions above might not be needed in a future version of InstaBuster, but you do need it for now.
+
+
+### Code templates (JavaScript only)
 * _Buster: New TestCase_ - Inserts a template for a new test case at current cursor position
 * _Buster: New Test_ - Inserts a template for a new test at current cursor position
+
 
 
 
@@ -71,6 +99,7 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 ##Version history
 Details of changes for each version is provided in the release notes.
 
+* 0.0.5 : CoffeScript testing support
 * 0.0.4 : Buster dashboard and improved performance
 * 0.0.3 : Reduced footprint and simple autotest feature.
 * 0.0.2 : Changed license to same as LightTable (GPL). Some minor fixes.
