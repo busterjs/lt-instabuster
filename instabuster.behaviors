@@ -20,6 +20,12 @@
                          :lt.plugins.instabuster/on-test-editor!
                          :lt.plugins.instabuster/on-maybe-autotest]
 
+     :editor.coffee [:lt.plugins.instabuster/on-test-live
+                     :lt.plugins.instabuster/on-maybe-toggle-buster
+                     :lt.plugins.instabuster/on-live-toggle!
+                     :lt.plugins.instabuster/on-test-editor!
+                     :lt.plugins.instabuster/on-maybe-autotest]
+
      :browser [:lt.plugins.instabuster/on-browser-destroyed]
 
      :buster.client [:lt.objs.clients/on-connect-drain

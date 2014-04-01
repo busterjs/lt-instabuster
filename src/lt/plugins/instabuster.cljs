@@ -30,6 +30,8 @@
                 :name "buster-plugin")
 
 
+
+
 (def buster (object/create ::buster-plugin))
 
 
@@ -68,12 +70,13 @@
 (def buster-runner (object/create ::buster.runner))
 
 
+
 (behavior ::on-connect-runner
           :triggers #{:connect.runner}
           :reaction (fn [this]
                       (when-not (or (:connected @this) (:connecting @this))
                         (let [cp (js/require "child_process")
-                              worker (.fork cp buster-test-path #js [] #js {:execPath (files/lt-home (thread/node-exe)) :silent true})
+                              worker (.fork cp buster-test-path #js [] #js {:execPath (files/lt-home (thread/node-exe)) :silent true :env #js {:NODE_PATH (files/join plugin-dir "node_modules") :dill "dall"}})
                               dis (fn [code signal]
                                     (object/raise this :kill))]
                           (object/merge! this {:connecting true})
