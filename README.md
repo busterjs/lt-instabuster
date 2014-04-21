@@ -99,6 +99,7 @@ None of the commands in the plugin comes with pre-assigned keyboard shortcuts. W
 ##Version history
 Details of changes for each version is provided in the release notes.
 
+* 0.0.6 : Stability fixes and refactoring. Behaviors should now load properly
 * 0.0.5 : CoffeScript testing support
 * 0.0.4 : Buster dashboard and improved performance
 * 0.0.3 : Reduced footprint and simple autotest feature.

@@ -86,17 +86,15 @@
 (behavior ::on-test
           :triggers #{:test}
           :reaction (fn[this args]
-                      (println "on test")
                       (if-let [conf (or (:buster-js args) (:buster-js @this))]
-                        (do
-                          (let [run #(object/raise runner/runner :run.test this {:type "test" :config conf :path (:path args)})
-                                capture-run (fn []
-                                              (capture-browser! this)
-                                              (js/setTimeout run 100))]
+                        (let [run #(object/raise runner/runner :run.test this {:type "test" :config conf :path (:path args)})
+                              capture-run (fn []
+                                            (capture-browser! this)
+                                            (js/setTimeout run 100))]
                           (notifos/working (str "Running Buster tests for " (files/parent conf)))
                           (if-not (:connected @buster-client)
-                             (object/raise buster-client :start.server capture-run)
-                             (if-not (:browser @this) (capture-run) (run)))))
+                            (object/raise buster-client :start.server capture-run)
+                            (if-not (:browser @this) (capture-run) (run))))
                         (do
                           (console/error (str
                                           "No suitable buster config found."
