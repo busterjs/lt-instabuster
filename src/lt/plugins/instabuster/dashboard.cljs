@@ -11,15 +11,15 @@
 (defn project-name [config]
   (files/basename (files/parent config)))
 
-(defui summary-ui [res]
+(defui summary-ui [this res]
   [:div.summary
    [:br]
    [:span (str "Tests: " (:tests res))]
    [:span (str "Failures: " (:failures res))]
    [:span (str "Errors: " (:errors res))]
    [:br]
-   [:span (str "Total: " (- (.now js/Date) (:test-init-at @dashboard)) " ms")]
-   [:span (str "Test: " (- (.now js/Date) (:suite-start-at @dashboard)) " ms")]])
+   [:span (str "Total: " (- (.now js/Date) (:test-init-at @this)) " ms")]
+   [:span (str "Test: " (- (.now js/Date) (:suite-start-at @this)) " ms")]])
 
 
 (defui failed-test-ui [res]
@@ -27,22 +27,22 @@
    [:ul
     [:li (:message res)]]])
 
-(defui failed-ui []
+(defui failed-ui [this]
   [:div.failed-tests
     [:h3 "Failed tests"]
     [:ul
      (map #(failed-test-ui %)
-          (filter #(contains? #{"error" "failure"} (:status %)) (:test-results @dashboard)))]])
+          (filter #(contains? #{"error" "failure"} (:status %)) (:test-results @this)))]])
 
 
-(defui testprogress-ui [res]
-  (let [status (if (tests-ok? (:test-results @dashboard)) "ok" "error")]
+(defui testprogress-ui [this res]
+  (let [status (if (tests-ok? (:test-results @this)) "ok" "error")]
     [:div.buster-results
-     [:h2 (str "Testresults for " (project-name (:config (first (:test-results @dashboard)))))]
+     [:h2 (str "Testresults for " (project-name (:config (first (:test-results @this)))))]
      [:div
        [:progress {:value (:executed-tests res) :max (:expected-tests res) :class status}]]
      [:p.curr-test (str (:executed-tests res) "/" (:expected-tests res) ": " (:test res) " (" (:test-case res) ")")]
-     (failed-ui)]))
+     (failed-ui this)]))
 
 (defui testinit-ui []
   [:div.buster-results
@@ -63,19 +63,8 @@
    [:div.result-container]
    [:div.project-container]])
 
-(object/object* ::dashboard
-                :tags #{:buster.dashboard}
-                :label "Buster Dashboard"
-                :init (fn [this]
-                        (wrapper @this)))
 
-(def dashboard (object/create ::dashboard))
 
-(behavior ::init
-          :triggers #{:object.instant}
-          :desc "Buster: Init Buster Dashboard"
-          :reaction (fn [this]
-                      (sidebar/add-item sidebar/rightbar dashboard)))
 
 (defn is-open? []
   (= (:active @sidebar/rightbar)
@@ -85,10 +74,6 @@
   (object/raise sidebar/rightbar :toggle dashboard))
 
 
-(cmd/command {:command :buster-dashboard-toggle
-              :desc "Buster: Toggle dashboard"
-              :exec (fn []
-                      (dashboard-toggle))})
 
 
 (defn tests-ok? [results]
@@ -98,7 +83,7 @@
 (behavior ::on-testrun-init
           :triggers #{:testrun.init}
           :reaction (fn [this]
-                      (let [container (dom/$ :div.result-container (:content @dashboard))]
+                      (let [container (dom/$ :div.result-container (:content @this))]
                         (dom/empty container)
                         (object/merge!  this {:test-results [] :test-init-at (.now js/Date)})
                         (dom/append container (testinit-ui)))))
@@ -113,21 +98,41 @@
           :triggers #{:test.result}
           :reaction (fn [this res]
                       (object/update! this [:test-results] conj res)
-                      (let [container (dom/$ :div.result-container (:content @dashboard))]
+                      (let [container (dom/$ :div.result-container (:content @this))]
                         (dom/empty container)
-                        (dom/append container (testprogress-ui res)))))
+                        (dom/append container (testprogress-ui this res)))))
 
 (behavior ::on-suite-complete
           :triggers #{:suite.complete}
           :reaction (fn [this res]
                       (object/update! this [:test-results] conj res)
-                      (let [container (dom/$ :div.result-container (:content @dashboard))]
-                        (dom/append container (summary-ui res)))))
+                      (let [container (dom/$ :div.result-container (:content @this))]
+                        (dom/append container (summary-ui this res)))))
 
 (behavior ::on-project-update
           :triggers #{:project.update}
           :reaction (fn [this data]
-                      (let [container (dom/$ :div.project-container (:content @dashboard))]
+                      (let [container (dom/$ :div.project-container (:content @this))]
                         (dom/empty container)
                         (dom/append container (project-ui data)))))
+
+(cmd/command {:command :buster-dashboard-toggle
+              :desc "Buster: Toggle dashboard"
+              :exec (fn []
+                      (dashboard-toggle))})
+
+
+(object/object* ::dashboard
+                :tags #{:buster.dashboard}
+                :label "Buster Dashboard"
+                :init (fn [this]
+                        (wrapper @this)))
+
+(def dashboard (object/create ::dashboard))
+
+(behavior ::init
+          :triggers #{:object.instant}
+          :desc "Buster: Init Buster Dashboard"
+          :reaction (fn [this]
+                      (sidebar/add-item sidebar/rightbar dashboard)))
 
