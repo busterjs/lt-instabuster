@@ -15,7 +15,7 @@
 (def buster-cfg-path (files/join buster-module-dir "buster-configuration"))
 (def whenjs (js/require (files/join buster-module-dir "/when")))
 
-(defn resolve-buster-js [editor]
+(defn resolve-buster-js [editor buster]
   (or (:buster-js (find-buster-js (:info @editor))) (:buster-js @buster)))
 
 (defn load-buster-cfg [busterjs]
@@ -40,8 +40,8 @@
         d))
     groups)))
 
-(defn maybe-buster-test [editor callback]
-  (when-let [busterjs (resolve-buster-js editor)]
+(defn maybe-buster-test [editor buster callback]
+  (when-let [busterjs (resolve-buster-js editor buster)]
     (let [path (relative-to busterjs (-> @editor :info :path))]
       (->
        (.all whenjs (->> (resolve-browser-groups busterjs)
@@ -54,8 +54,8 @@
 (defn paths-from-resourceSets [resourceSets]
   (flatten (map #(cljs/js->clj (.map % (fn [res] (.-path res)))) resourceSets)))
 
-(defn maybe-buster-file [editor callback]
-  (when-let [busterjs (resolve-buster-js editor)]
+(defn maybe-buster-file [editor buster callback]
+  (when-let [busterjs (resolve-buster-js editor buster)]
     (let [path (relative-to busterjs (-> @editor :info :path))]
       (->
        (.all whenjs (clj->js (map #(.resolve %) (resolve-browser-groups busterjs))))

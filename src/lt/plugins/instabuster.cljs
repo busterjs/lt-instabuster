@@ -160,7 +160,7 @@
 (behavior ::on-maybe-toggle-buster
           :triggers #{:active}
           :reaction (fn [editor]
-                      (config/maybe-buster-test editor #(object/raise editor :test.editor))))
+                      (config/maybe-buster-test editor buster #(object/raise editor :test.editor))))
 
 (behavior ::on-test-editor!
           :triggers #{:test.editor}
@@ -186,7 +186,7 @@
                       (when (and (= (:buster-js (config/find-buster-js (:info @editor))) (:buster-js @buster))
                                  (:autotest @buster )
                                  (not (object/has-tag? editor :editor.buster.live)))
-                        (config/maybe-buster-file editor #((object/raise buster :test {}))))))
+                        (config/maybe-buster-file editor buster #((object/raise buster :test {}))))))
 
 (behavior ::on-toggle-autotest
           :triggers #{:autotest}
